@@ -59,9 +59,9 @@ class users
 
     public function logIn(){
         $connector = new dbSocket();
-        $connector->dbSocket->prepare('SELECT * FROM `users` WHERE `login` = :login AND `password` = :password');
-        $connector->dbSocket->execute(['login' => $this->login, 'password' => $this->password]);
-        $row = $connector->dbSocket->fetch(PDO::FETCH_ASSOC);
+        $stmt = $connector->dbSocket->prepare('SELECT * FROM `users` WHERE `login` = :login AND `password` = :password');
+        $stmt->execute(['login' => $this->login, 'password' => $this->password]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if($row){
             $this->id = $row['id'];
             $this->login = $row['login'];
@@ -80,9 +80,9 @@ class users
 
     public function logOut(): bool{
         $connector = new dbSocket();
-        $connector->dbSocket->prepare('SELECT * FROM `users` WHERE `login` = :login && sessin_key = :sessionKey');
-        $connector->dbSocket->execute(['login' => $this->login, 'sessionKey' => $this->sessionKey]);
-        $row = $connector->dbSocket->fetch(PDO::FETCH_ASSOC);
+        $stmt = $connector->dbSocket->prepare('SELECT * FROM `users` WHERE `login` = :login && sessin_key = :sessionKey');
+        $stmt->execute(['login' => $this->login, 'sessionKey' => $this->sessionKey]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if($row){
             $this->id = $row['id'];
             $this->login = $row['login'];
@@ -99,20 +99,19 @@ class users
     }
 
     public function updateUser(){
-        $this->password = md5($this->password);
         $connector = new dbSocket();
-        $connector->dbSocket->prepare('UPDATE `users` SET 
+        $stmt = $connector->dbSocket->prepare('UPDATE `users` SET 
                                             `user_name` = :userName, 
                                             `login` = :login, 
                                             `email` = :email, 
                                             `password` = :password,
                                             `session_key` = :sessionKey WHERE `id` = :id');
-        $connector->dbSocket->execute(['userName' => $this->name,
-                                        'login' => $this->login,
-                                        'email' => $this->email,
-                                        'password' => $this->password,
-                                        'session_key' => $this->sessionKey,
-                                        'id' => $this->id]);
+        $stmt->execute(['userName' => $this->name,
+                        'login' => $this->login,
+                        'email' => $this->email,
+                        'password' => $this->password,
+                        'sessionKey' => $this->sessionKey,
+                        'id' => $this->id]);
     }
 
     public function selectUserByLogin(){
@@ -131,5 +130,13 @@ class users
         else{
             $this->id = null;
         }
+    }
+
+    public function checkSession(){
+        $connector = new dbSocket();
+        $stmt = $connector->dbSocket->prepare('SELECT COUNT(`id`) as `count` FROM `users` WHERE `id` = :id AND `session_key` = :sessionKey');
+        $stmt->execute(['id' => $this->id, 'sessionKey' => $this->sessionKey]);
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $result[0]['count'];
     }
 }

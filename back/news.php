@@ -15,30 +15,52 @@ class news
         return $connector->dbSocket->lastInsertId();
     }
 
-    public function newsList($newsId = null){
+    public function newsList($newsId = null, $userId = null){
         $news = [];
         $connector = new dbSocket();
         $where = '';
+        $data = null;
         if($newsId!=null){
-            $where = 'WHERE `id` = ?';
+            $where = 'WHERE n.`id` = :newsId';
+            $data = ['newsId'=>$newsId];
         }
-        $stmt = $connector->dbSocket->prepare('SELECT * FROM `news`'.$where);
-        $stmt->execute($newsId);
-        while ($row = $stmt->fetch(PDO::FETCH_LAZY)) {
-            $news[] = $row;
+        $stmt = $connector->dbSocket->prepare('SELECT 
+                                                     n.`id` as `id`, 
+                                                     n.`title` as `title`, 
+                                                     n.`announcement` as `announcement`, 
+                                                     u.`user_name` as `author`,
+                                                     n.`date` as `date`,
+                                                     n.`text` as `text`,
+                                                     n.`author` as `authorId`
+                                                     FROM `news` n 
+                                                     INNER JOIN `users` u ON u.`id` = n.`author` '.$where);
+        $stmt->execute($data);
+        $news = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if($userId!=null){
+            foreach ($news as $k => $v){
+                if($v['authorId']==$userId){
+                    $news[$k]['editable'] = 1;
+                }
+                else{
+                    $news[$k]['editable'] = 0;
+                }
+            }
         }
         return $news;
     }
 
-    public function editNews(){
+    public function editNews(): bool
+    {
         $news = $this->newsList($this->news[0]['id']);
-        if($news[0]['author']==$this->news['author']) {
+        print_r($this->news);
+        if($news[0]['authorId']==$this->news[0]['author']) {
             $connector = new dbSocket();
             $stmt = $connector->dbSocket->prepare('UPDATE `news` SET `title` = :title, `announcement` =  :announcement, `text` = :text WHERE `id` = :id');
             $stmt->execute(['title' => $this->news[0]['title'],
                 'announcement' => $this->news[0]['announcement'],
                 'text' => $this->news[0]['text'],
                 'id' => $this->news[0]['id']]);
+            print_r($stmt->errorInfo());
             return true;
         }
         else{

@@ -3,9 +3,9 @@
 class dbSocket
 {
     public $dbSocket;
-    public $dsn = 'mysql:dbname=db_name;host=localhost';
-    public $dbUser = 'user';
-    public $dbPassword = 'password';
+    public $dsn = 'mysql:dbname=test_application;host=localhost';
+    public $dbUser = 'test';
+    public $dbPassword = 'test';
 
 
     public function __construct(){
